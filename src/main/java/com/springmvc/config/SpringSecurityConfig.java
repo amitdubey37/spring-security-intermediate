@@ -5,6 +5,9 @@ import com.springmvc.repositories.UserRepository;
 import com.springmvc.service.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.access.intercept.RunAsImplAuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,7 +20,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 
-@EnableWebSecurity
+@EnableWebSecurity()
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     DataSource dataSource;
@@ -38,7 +41,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder managerBuilder) throws Exception {
         managerBuilder
-                .userDetailsService(customUserDetailService).passwordEncoder(passwordEncoder());
+                .authenticationProvider(daoProvider())
+                .authenticationProvider(runAsProvider());
     }
 
     @Override
@@ -60,6 +64,20 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder(12);
+    }
+    @Bean
+    AuthenticationProvider daoProvider() {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+        daoAuthenticationProvider.setUserDetailsService(customUserDetailService);
+        return daoAuthenticationProvider;
+    }
+
+    @Bean
+    AuthenticationProvider runAsProvider() {
+        RunAsImplAuthenticationProvider runAsImplAuthenticationProvider = new RunAsImplAuthenticationProvider();
+        runAsImplAuthenticationProvider.setKey("MyRunAsKey");
+        return runAsImplAuthenticationProvider;
     }
 
 }
