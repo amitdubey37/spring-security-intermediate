@@ -39,6 +39,6 @@ dependencies {
 
 tomcatRun {
     contextPath = ""
-    httpPort = 8080
+    httpPort = 8085
 }
 
