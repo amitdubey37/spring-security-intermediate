@@ -7,12 +7,18 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import javax.sql.DataSource;
+
+
 @EnableWebSecurity
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
+    DataSource dataSource;
+
+    @Autowired
     public void configureGlobal(AuthenticationManagerBuilder managerBuilder) throws Exception {
         managerBuilder
-                .inMemoryAuthentication()
+                .jdbcAuthentication().dataSource(dataSource)
                 .withUser("user").password("pass").roles("USER");
     }
 
