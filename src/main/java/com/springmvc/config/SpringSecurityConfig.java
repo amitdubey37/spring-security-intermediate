@@ -4,10 +4,13 @@ import com.springmvc.entity.User;
 import com.springmvc.repositories.UserRepository;
 import com.springmvc.service.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.annotation.PostConstruct;
@@ -28,14 +31,14 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     void postConstruct() {
         User user = new User();
         user.setUsername("user");
-        user.setPassword("pass");
+        user.setPassword(passwordEncoder().encode("pass"));
         userRepository.save(user);
     }
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder managerBuilder) throws Exception {
         managerBuilder
-                .userDetailsService(customUserDetailService);
+                .userDetailsService(customUserDetailService).passwordEncoder(passwordEncoder());
     }
 
     @Override
@@ -54,4 +57,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     }
+    @Bean
+    PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder(12);
+    }
+
 }
