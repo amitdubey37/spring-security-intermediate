@@ -1,6 +1,7 @@
 package com.springmvc.config;
 
 import com.springmvc.entity.User;
+import com.springmvc.filter.LoggingFilter;
 import com.springmvc.repositories.UserRepository;
 import com.springmvc.service.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.switchuser.SwitchUserFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.annotation.PostConstruct;
@@ -30,6 +33,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     UserRepository userRepository;
+
     @PostConstruct
     void postConstruct() {
         User user = new User();
@@ -45,11 +49,16 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authenticationProvider(runAsProvider());
     }
 
+    @Autowired
+    LoggingFilter loggingFilter;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .csrf()
                 .disable()
+                .addFilterBefore(loggingFilter, AnonymousAuthenticationFilter.class)
+                .addFilter(switchUserFilter())
                 .authorizeRequests()
                 .anyRequest().authenticated()
                 .and()
@@ -57,14 +66,16 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .logout()
                 .permitAll()
-                .logoutRequestMatcher(new AntPathRequestMatcher("/doLogout","GET"));
+                .logoutRequestMatcher(new AntPathRequestMatcher("/doLogout", "GET"));
 
 
     }
+
     @Bean
-    PasswordEncoder passwordEncoder(){
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
+
     @Bean
     AuthenticationProvider daoProvider() {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
@@ -78,6 +89,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         RunAsImplAuthenticationProvider runAsImplAuthenticationProvider = new RunAsImplAuthenticationProvider();
         runAsImplAuthenticationProvider.setKey("MyRunAsKey");
         return runAsImplAuthenticationProvider;
+    }
+
+    @Bean
+    SwitchUserFilter switchUserFilter() {
+        SwitchUserFilter switchUserFilter = new SwitchUserFilter();
+        switchUserFilter.setUserDetailsService(customUserDetailService);
+        switchUserFilter.setSwitchUserUrl("/switch/user");
+        switchUserFilter.setTargetUrl("/");
+        return switchUserFilter;
     }
 
 
